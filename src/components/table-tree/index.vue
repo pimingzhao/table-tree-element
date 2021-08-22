@@ -1,7 +1,7 @@
 <!--
  * @Author: pimzh
  * @Date: 2021-08-19 19:17:39
- * @LastEditTime: 2021-08-19 22:01:27
+ * @LastEditTime: 2021-08-22 15:32:13
  * @LastEditors: pimzh
  * @Description:
 -->
@@ -42,6 +42,14 @@ export default {
       immediate: true
     }
   },
+  mounted() {
+    // bind table methods to table tree
+    const table = this.$refs.table
+    const tableMethods = table.$options.methods
+    Object.keys(tableMethods).forEach(key => {
+      this[key] =  tableMethods[key].bind(table)
+    })
+  },
   methods: {
     createTree(h, props, i) {
       this.treeIndex = i
@@ -60,15 +68,16 @@ export default {
       if (node.expand) {
         node.expand = false
         this.loopTree(node.children, (item, i, p) => {
-          if (p === node || item.__expand) {
+          item.__expand = p.expand
+          if (p.expand || !item.__expand) {
             !this.hiddenRows.includes(item.__id) && this.hiddenRows.push(item.__id)
           }
         }, node)
       } else {
-        this.$set(node, 'expand', true)
+        node.expand = true
         this.loopTree(node.children, (item, i, p) => {
           item.__expand = p.expand
-          if (p === node || item.__expand) {
+          if (item.__expand) {
             this.hiddenRows.splice(this.hiddenRows.indexOf(item.__id), 1)
           }
         }, node)
@@ -82,7 +91,7 @@ export default {
     },
     getCellCls(data) {
       return (
-        data.columnIndex === this.treeIndex ? 'no-overflow ' : ''
+        data.columnIndex === this.treeIndex ? 'no-padding ' : ''
       ) + (this.cellClassName(data) || '')
     },
 
@@ -119,31 +128,41 @@ export default {
         item.__level = (p ? p.__level : -1) + 1
         // 节点唯一标识
         item.__id = (p?.__id || 'x') + '_' + i
-        item.expand = item.expand || false
+        item.children?.length && (item.expand = item.expand || false)
         if (p) {
           // 初始化节点不展开
-          !item.expand && this.hiddenRows.push(item.__id)
+          !p.expand && this.hiddenRows.push(item.__id)
           item.__expand = p.expand
           p.children[p.children.length - 1].__isLast = true
         }
         arr.push(item)
       })
-      arr[arr.length - 1].__isLast = true
+      arr.forEach(item => item.children?.length && (item.expand = item.expand || false))
+      arr.length && (arr[arr.length - 1].__isLast = true)
       return arr
     }
   },
   render(h) {
-    return (<el-table row-class-name={this.getRowCls} cell-class-name={this.getCellCls} data={this.tableData} props={this.$attrs} on={this.$listeners}>
-      { this.$slots.default.map((item, i) => {
-        if (!item.tag) {
-          return ''
-        }
-        if (item.componentOptions.propsData?.type === 'tree') {
-          return this.createTree(h, item.componentOptions.propsData, i)
-        }
-        return item
-      }) }
-    </el-table>)
+    return (
+      <el-table
+        ref="table"
+        row-class-name={this.getRowCls}
+        cell-class-name={this.getCellCls}
+        data={this.tableData}
+        props={this.$attrs}
+        on={this.$listeners}
+      >
+        {this.$slots.default.map((item, i) => {
+          if (!item.tag) {
+            return ""
+          }
+          if (item.componentOptions.propsData?.type === "tree") {
+            return this.createTree(h, item.componentOptions.propsData, i)
+          }
+          return item
+        })}
+      </el-table>
+    )
   }
 }
 </script>
@@ -153,13 +172,12 @@ export default {
   .row-hidden {
     display: none;
   }
-  .no-overflow {
+  .no-padding {
     padding: 0;
     .cell {
       padding: 0;
       height: 50px;
       display: flex;
-      overflow: visible;
     }
   }
 }

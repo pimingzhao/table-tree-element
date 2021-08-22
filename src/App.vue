@@ -1,7 +1,7 @@
 <!--
  * @Author: pimzh
  * @Date: 2021-08-21 13:41:10
- * @LastEditTime: 2021-08-21 14:07:51
+ * @LastEditTime: 2021-08-22 15:22:25
  * @LastEditors: pimzh
  * @Description: 
 -->
@@ -9,9 +9,11 @@
   <div>
     <el-button @click="handleTree">tree</el-button>
     <el-button @click="handleTable">table</el-button>
-    <table-tree :data="data" style="width: 100%" border @row-click="handleRow">
-      <el-table-column type="index" width="50" fixed="left" />
-      <el-table-column v-if="isTree" type="tree" width="120" fixed="left" />
+    <el-button @click="toggleAllSelection">select all</el-button>
+    <table-tree ref="tableTree" :data="data" style="width: 100%" stripe border @row-click="handleRow">
+      <el-table-column type="index" label="序号" width="50" />
+      <el-table-column type="selection" width="55" />
+      <el-table-column v-if="isTree" type="tree" label="树" width="120" />
       <el-table-column prop="name" label="名称" />
       <el-table-column prop="date" label="日期" width="580" />
       <el-table-column prop="date" label="日期" width="180" />
@@ -50,13 +52,17 @@ export default {
       this.isTree = false
       this.data = this.getData()
     },
+    toggleAllSelection() {
+      this.$refs['tableTree'].toggleAllSelection()
+    },
     handleTree() {
       this.isTree = true
       const data = this.getCommonData()
-      this.loopTree(data, (item) => {
-        // 默认展开所有节点
-        item.expand = true
-      })
+      // this.loopTree(data, (item, i, p) => {
+      //   // 默认展开所有节点
+      //   p && (p.expand = true)
+      // })
+      data.forEach(item => item.expand = true)
       this.data = data
     },
     getCommonData() {
@@ -138,18 +144,18 @@ export default {
       return [
         {
           date: '2016-05-02',
-          name: '1',
+          name: 's1',
           address: '上海市普陀区金沙江路 1518 弄'
         },
         {
           date: '2016-05-04',
-          name: '2',
+          name: 's2',
           address: '上海市普陀区金沙江路 1517 弄',
           children: []
         },
         {
           date: '2016-05-04',
-          name: '2',
+          name: 's3',
           address: '上海市普陀区金沙江路 1517 弄',
           children: []
         }

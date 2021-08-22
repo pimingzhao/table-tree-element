@@ -1,7 +1,7 @@
 <!--
  * @Author: pimzh
  * @Date: 2021-08-19 19:17:54
- * @LastEditTime: 2021-08-21 14:08:57
+ * @LastEditTime: 2021-08-22 14:01:09
  * @LastEditors: pimzh
  * @Description:
 -->
@@ -26,7 +26,10 @@ export default {
           data.children?.length && _('i', {
             class: 'icon-cls ' + (data.expand ? 'el-icon-remove' : 'el-icon-circle-plus'),
             on: {
-              click: () => onIconClick(data)
+              click: (e) => {
+                e.stopPropagation()                
+                onIconClick(data)
+              }
             }
           }) || ''
         ])
