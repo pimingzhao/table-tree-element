@@ -1,7 +1,7 @@
 <!--
  * @Author: pimzh
  * @Date: 2021-08-19 19:17:39
- * @LastEditTime: 2021-08-22 15:32:13
+ * @LastEditTime: 2021-08-22 15:37:28
  * @LastEditors: pimzh
  * @Description:
 -->
@@ -63,7 +63,7 @@ export default {
         }
       })
     },
-
+    // 展开关闭树节点时触发
     onIconClick(node) {
       if (node.expand) {
         node.expand = false
@@ -83,18 +83,19 @@ export default {
         }, node)
       }
     },
-
+    // 合并 props row-class-name 与当前组件的 rowClassName
     getRowCls(data) {
       return (
         this.hiddenRows.includes(data.row.__id) ? 'row-hidden ' : ''
       ) + (this.rowClassName(data) || '')
     },
+    // 同 rowClassName
     getCellCls(data) {
       return (
         data.columnIndex === this.treeIndex ? 'no-padding ' : ''
       ) + (this.cellClassName(data) || '')
     },
-
+    // 先序遍历树
     loopTree(data, cb, p) {
       data.forEach((item, i) => {
         cb(item, i, p)
@@ -103,10 +104,11 @@ export default {
         }
       })
     },
-
+    // 是否为一个Object
     isObj(data) {
       return Object.prototype.toString.call(data) === '[object Object]'
     },
+    // 深拷贝数据
     deepClone(data) {
       if (Array.isArray(data)) {
         return data.map(item => this.deepClone(item))
@@ -120,9 +122,10 @@ export default {
       }
       return data
     },
-
+    // 数据转换
     formatData(data) {
       const arr = []
+      // 通过深拷贝不污染原数据集
       this.loopTree(this.deepClone(data), (item, i, p) => {
         // 节点层级
         item.__level = (p ? p.__level : -1) + 1
