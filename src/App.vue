@@ -1,7 +1,7 @@
 <!--
  * @Author: pimzh
  * @Date: 2021-08-21 13:41:10
- * @LastEditTime: 2021-08-22 15:22:25
+ * @LastEditTime: 2021-09-07 18:34:19
  * @LastEditors: pimzh
  * @Description: 
 -->
@@ -10,7 +10,14 @@
     <el-button @click="handleTree">tree</el-button>
     <el-button @click="handleTable">table</el-button>
     <el-button @click="toggleAllSelection">select all</el-button>
-    <table-tree ref="tableTree" :data="data" style="width: 100%" stripe border @row-click="handleRow">
+    <table-tree
+      ref="tableTree"
+      :data="data"
+      style="width: 100%"
+      stripe border
+      @row-click="handleRow"
+      children-key="__cd"
+    >
       <el-table-column type="index" label="序号" width="50" />
       <el-table-column type="selection" width="55" />
       <el-table-column v-if="isTree" type="tree" label="树" width="120" />
@@ -43,8 +50,8 @@ export default {
     loopTree(data, cb, p) {
       data.forEach((item, i) => {
         cb(item, i, p)
-        if (item.children?.length) {
-          this.loopTree(item.children, cb, item)
+        if (item.__cd?.length) {
+          this.loopTree(item.__cd, cb, item)
         }
       })
     },
@@ -76,12 +83,12 @@ export default {
           date: '2016-05-04',
           name: '2',
           address: '上海市普陀区金沙江路 1517 弄',
-          children: [
+          __cd: [
             {
               date: '2016-05-04',
               name: '2-1',
               address: '上海市普陀区金沙江路 1517 弄',
-              children: [
+              __cd: [
                 {
                   date: '2016-05-04',
                   name: '2-1-1',
@@ -103,7 +110,7 @@ export default {
               date: '2016-05-04',
               name: '2-2',
               address: '上海市普陀区金沙江路 1517 弄',
-              children: [
+              __cd: [
                 {
                   date: '2016-05-04',
                   name: '2-2-1',
@@ -151,13 +158,13 @@ export default {
           date: '2016-05-04',
           name: 's2',
           address: '上海市普陀区金沙江路 1517 弄',
-          children: []
+          __cd: []
         },
         {
           date: '2016-05-04',
           name: 's3',
           address: '上海市普陀区金沙江路 1517 弄',
-          children: []
+          __cd: []
         }
       ]
     },

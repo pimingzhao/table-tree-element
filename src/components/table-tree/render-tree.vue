@@ -1,7 +1,7 @@
 <!--
  * @Author: pimzh
  * @Date: 2021-08-19 19:17:54
- * @LastEditTime: 2021-08-22 14:01:09
+ * @LastEditTime: 2021-09-07 17:17:53
  * @LastEditors: pimzh
  * @Description:
 -->
@@ -10,7 +10,7 @@ export default {
   name: 'RenderTree',
   functional: true,
   render(_, context) {
-    const { data, onIconClick } = context.props
+    const { data, onIconClick, childrenKey } = context.props
 
     const renderTemp = () => {
       const arr = []
@@ -23,7 +23,7 @@ export default {
         _('span', {
           class: 'icon-wrapper' + (data.__isLast ? ' icon-wrapper-last' : '')
         }, [
-          data.children?.length && _('i', {
+          data[childrenKey]?.length && _('i', {
             class: 'icon-cls ' + (data.expand ? 'el-icon-remove' : 'el-icon-circle-plus'),
             on: {
               click: (e) => {

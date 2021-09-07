@@ -1,7 +1,7 @@
 <!--
  * @Author: pimzh
  * @Date: 2021-08-19 19:17:39
- * @LastEditTime: 2021-08-22 15:37:28
+ * @LastEditTime: 2021-09-07 18:36:39
  * @LastEditors: pimzh
  * @Description:
 -->
@@ -23,13 +23,18 @@ export default {
     cellClassName: {
       type: Function,
       default: () => {}
+    },
+    childrenKey: {
+      type: String,
+      default: 'children'
     }
   },
   data() {
     return {
       tableData: [],
       hiddenRows: [],
-      treeIndex: -1
+      treeIndex: -1,
+      childrenMap: Object.create(null) // parent 与 chlid 之间的映射关系
     }
   },
   watch: {
@@ -51,59 +56,6 @@ export default {
     })
   },
   methods: {
-    createTree(h, props, i) {
-      this.treeIndex = i
-      const { onIconClick } = this
-      return h('el-table-column', {
-        props,
-        scopedSlots: {
-          default: ({ row }) => h('render-tree', {
-            props: { data: row, onIconClick }
-          })
-        }
-      })
-    },
-    // 展开关闭树节点时触发
-    onIconClick(node) {
-      if (node.expand) {
-        node.expand = false
-        this.loopTree(node.children, (item, i, p) => {
-          item.__expand = p.expand
-          if (p.expand || !item.__expand) {
-            !this.hiddenRows.includes(item.__id) && this.hiddenRows.push(item.__id)
-          }
-        }, node)
-      } else {
-        node.expand = true
-        this.loopTree(node.children, (item, i, p) => {
-          item.__expand = p.expand
-          if (item.__expand) {
-            this.hiddenRows.splice(this.hiddenRows.indexOf(item.__id), 1)
-          }
-        }, node)
-      }
-    },
-    // 合并 props row-class-name 与当前组件的 rowClassName
-    getRowCls(data) {
-      return (
-        this.hiddenRows.includes(data.row.__id) ? 'row-hidden ' : ''
-      ) + (this.rowClassName(data) || '')
-    },
-    // 同 rowClassName
-    getCellCls(data) {
-      return (
-        data.columnIndex === this.treeIndex ? 'no-padding ' : ''
-      ) + (this.cellClassName(data) || '')
-    },
-    // 先序遍历树
-    loopTree(data, cb, p) {
-      data.forEach((item, i) => {
-        cb(item, i, p)
-        if (item.children?.length) {
-          this.loopTree(item.children, cb, item)
-        }
-      })
-    },
     // 是否为一个Object
     isObj(data) {
       return Object.prototype.toString.call(data) === '[object Object]'
@@ -122,27 +74,96 @@ export default {
       }
       return data
     },
+    createTree(h, props, i) {
+      this.treeIndex = i
+      const { onIconClick, childrenKey } = this
+      return h('el-table-column', {
+        props,
+        scopedSlots: {
+          default: ({ row }) => h('render-tree', {
+            props: { data: row, onIconClick, childrenKey }
+          })
+        }
+      })
+    },
+    // 展开关闭树节点时触发
+    onIconClick(node) {
+      const childrenMap = this.childrenMap
+      const tableData = this.tableData
+      const cids = [...childrenMap[node.__id]]
+      // 关闭节点
+      if (node.expand) {
+        while (cids.length) {
+          const child = tableData[cids.pop()]
+          this.hiddenRows.push(child.__id)
+          if (child.expand && child.__id in childrenMap) {
+            cids.push(...childrenMap[child.__id])
+          }
+        }
+        node.expand = false
+      } else {
+        // 展开节点
+        while (cids.length) {
+          const child = tableData[cids.pop()]
+          this.hiddenRows.splice(
+            this.hiddenRows.indexOf(child.__id),
+            1
+          )
+          if (child.expand && child.__id in childrenMap) {
+            cids.push(...childrenMap[child.__id])
+          }
+        }
+        node.expand = true
+      }
+    },
+    // 合并 props row-class-name 与当前组件的 rowClassName
+    getRowCls(data) {
+      return (
+        this.hiddenRows.includes(data.row.__id) ? 'row-hidden ' : ''
+      ) + (this.rowClassName(data) || '')
+    },
+    // 同 rowClassName
+    getCellCls(data) {
+      return (
+        data.columnIndex === this.treeIndex ? 'no-padding ' : ''
+      ) + (this.cellClassName(data) || '')
+    },
     // 数据转换
     formatData(data) {
-      const arr = []
+      const tableData = []
+      const childrenMap = this.childrenMap
+      const childrenKey = this.childrenKey
+      let count = 0
+
+      const loopTree = (arr, p) => {
+        arr.forEach((item, i) => {
+          // 节点层级
+          item.__level = (p ? p.__level : -1) + 1
+          // 节点唯一标识
+          item.__id = (p?.__id || 'x') + '_' + i
+          if (p) {
+            !p.expand && this.hiddenRows.push(item.__id)
+            p[childrenKey][p[childrenKey].length - 1].__isLast = true
+            childrenMap[p.__id].push(count)
+          }
+          count++
+          tableData.push(item)
+          if (item[childrenKey]?.length) {
+            item.expand = item.expand || false
+            childrenMap[item.__id] = []
+            // loop children
+            loopTree(item[childrenKey], item)
+          } else {
+            // 是否应该是 item.expand = false
+            delete item.expand
+          }
+        })
+      }
       // 通过深拷贝不污染原数据集
-      this.loopTree(this.deepClone(data), (item, i, p) => {
-        // 节点层级
-        item.__level = (p ? p.__level : -1) + 1
-        // 节点唯一标识
-        item.__id = (p?.__id || 'x') + '_' + i
-        item.children?.length && (item.expand = item.expand || false)
-        if (p) {
-          // 初始化节点不展开
-          !p.expand && this.hiddenRows.push(item.__id)
-          item.__expand = p.expand
-          p.children[p.children.length - 1].__isLast = true
-        }
-        arr.push(item)
-      })
-      arr.forEach(item => item.children?.length && (item.expand = item.expand || false))
-      arr.length && (arr[arr.length - 1].__isLast = true)
-      return arr
+      loopTree(this.deepClone(data))
+      tableData.length && (tableData[tableData.length - 1].__isLast = true)
+      this.childrenMap = childrenMap
+      return tableData
     }
   },
   render(h) {
