@@ -1,7 +1,7 @@
 <!--
  * @Author: pimzh
  * @Date: 2021-08-19 19:17:39
- * @LastEditTime: 2021-09-08 09:07:27
+ * @LastEditTime: 2021-09-08 09:15:56
  * @LastEditors: pimzh
  * @Description:
 -->
@@ -42,8 +42,8 @@ export default {
       handler(val) {
         this.treeIndex = -1
         this.hiddenRows = []
-        this.tableData = this.formatData(val)
         this.childrenMap = Object.create(null)
+        this.tableData = this.formatData(val)
       },
       immediate: true
     }
